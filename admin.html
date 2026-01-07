@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - DMP AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="v.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="{
+    auth: false,
+    password: '',
+    activeTab: 'general',
+    store: null,
+    init() {
+        this.store = Alpine.store('site');
+        // Auto login check if already authenticated in session (optional enhancement, sticking to basic gate for now)
+    },
+    login() {
+        if (this.password === this.store.config.admin.password) {
+            this.auth = true;
+        } else {
+            alert('Sai mật khẩu!');
+        }
+    }
+}">
+
+    <!-- Login Gate -->
+    <div x-show="!auth" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Đăng nhập Quản trị</h2>
+            <form @submit.prevent="login">
+                <div class="mb-4">
+                    <label class="block text-gray-700 mb-2">Mật khẩu</label>
+                    <input type="password" x-model="password" class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Đăng nhập</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div x-show="auth" class="flex flex-col h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white shadow-sm z-10 flex justify-between items-center px-6 py-4">
+            <h1 class="text-xl font-bold text-gray-800">DMP AI CMS</h1>
+            <div class="flex gap-4">
+                <a href="index.html" target="_blank" class="text-blue-600 hover:underline">Xem Website</a>
+                <button @click="store.save()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 shadow-sm">Lưu Thay Đổi</button>
+            </div>
+        </header>
+
+        <div class="flex flex-1 overflow-hidden">
+            <!-- Sidebar -->
+            <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col overflow-y-auto">
+                <nav class="p-4 space-y-2">
+                    <button @click="activeTab = 'general'" :class="activeTab === 'general' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Thông tin chung</button>
+                    <button @click="activeTab = 'hero'" :class="activeTab === 'hero' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Hero Section</button>
+                    <button @click="activeTab = 'features'" :class="activeTab === 'features' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Tính năng</button>
+                    <button @click="activeTab = 'pricing'" :class="activeTab === 'pricing' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Bảng giá</button>
+                    <button @click="activeTab = 'testimonials'" :class="activeTab === 'testimonials' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Khách hàng</button>
+                    <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Cài đặt Admin</button>
+                </nav>
+            </aside>
+
+            <!-- Content Area -->
+            <main class="flex-1 overflow-y-auto p-8">
+                
+                <!-- General Tab -->
+                <div x-show="activeTab === 'general'" class="space-y-6">
+                    <h2 class="text-2xl font-bold mb-4">Thông tin chung</h2>
+                    <div class="bg-white p-6 rounded shadow-sm space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tên Website</label>
+                            <input type="text" x-model="store.config.general.siteName" class="w-full border p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Logo URL</label>
+                            <input type="text" x-model="store.config.general.logoUrl" class="w-full border p-2 rounded">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Số điện thoại</label>
+                                <input type="text" x-model="store.config.general.contact.phone" class="w-full border p-2 rounded">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Email</label>
+                                <input type="text" x-model="store.config.general.contact.email" class="w-full border p-2 rounded">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Địa chỉ</label>
+                            <input type="text" x-model="store.config.general.contact.address" class="w-full border p-2 rounded">
+                        </div>
+                        <h3 class="font-bold mt-4">Mạng xã hội</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" x-model="store.config.general.contact.facebook" placeholder="Facebook URL" class="w-full border p-2 rounded">
+                            <input type="text" x-model="store.config.general.contact.zalo" placeholder="Zalo URL" class="w-full border p-2 rounded">
+                            <input type="text" x-model="store.config.general.contact.tiktok" placeholder="TikTok URL" class="w-full border p-2 rounded">
+                            <input type="text" x-model="store.config.general.contact.youtube" placeholder="Youtube URL" class="w-full border p-2 rounded">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hero Tab -->
+                <div x-show="activeTab === 'hero'" class="space-y-6">
+                    <h2 class="text-2xl font-bold mb-4">Hero Section</h2>
+                    <div class="bg-white p-6 rounded shadow-sm space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Tiêu đề chính</label>
+                            <input type="text" x-model="store.config.hero.headline" class="w-full border p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Mô tả phụ</label>
+                            <textarea x-model="store.config.hero.subheadline" rows="3" class="w-full border p-2 rounded"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Nút CTA</label>
+                            <input type="text" x-model="store.config.hero.ctaText" class="w-full border p-2 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Ảnh Hero URL</label>
+                            <input type="text" x-model="store.config.hero.imageUrl" class="w-full border p-2 rounded">
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-xl font-bold mt-6 mb-2">Thống kê (Stats)</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <template x-for="stat in store.config.stats">
+                            <div class="bg-white p-4 rounded shadow-sm">
+                                <input type="text" x-model="stat.number" class="w-full border p-2 rounded mb-2 font-bold">
+                                <input type="text" x-model="stat.label" class="w-full border p-2 rounded text-sm text-gray-600">
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Features Tab -->
+                <div x-show="activeTab === 'features'" class="space-y-6">
+                    <h2 class="text-2xl font-bold mb-4">Danh sách tính năng</h2>
+                    <template x-for="(feature, index) in store.config.features">
+                        <div class="bg-white p-6 rounded shadow-sm mb-4 border-l-4 border-blue-500">
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold" x-text="'Tính năng #' + (index + 1)"></span>
+                            </div>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="text-xs text-gray-500">Tên tính năng</label>
+                                    <input type="text" x-model="feature.title" class="w-full border p-2 rounded">
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500">Mô tả</label>
+                                    <textarea x-model="feature.desc" class="w-full border p-2 rounded"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-xs text-gray-500">SVG Path (Icon)</label>
+                                    <input type="text" x-model="feature.icon" class="w-full border p-2 rounded font-mono text-xs">
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Pricing Tab -->
+                <div x-show="activeTab === 'pricing'" class="space-y-6">
+                    <h2 class="text-2xl font-bold mb-4">Bảng giá dịch vụ</h2>
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <template x-for="plan in store.config.pricing">
+                            <div class="bg-white p-6 rounded shadow-sm">
+                                <div class="mb-4">
+                                    <label class="text-xs text-gray-500">Tên gói</label>
+                                    <input type="text" x-model="plan.name" class="w-full border p-2 rounded font-bold">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-xs text-gray-500">Giá</label>
+                                    <input type="text" x-model="plan.price" class="w-full border p-2 rounded">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-xs text-gray-500">Chu kỳ</label>
+                                    <input type="text" x-model="plan.period" class="w-full border p-2 rounded">
+                                </div>
+                                <div class="mb-4">
+                                    <label class="text-xs text-gray-500">Đặc điểm (cách nhau bởi phẩy)</label>
+                                    <!-- Simple array edit hack for MVP: Join/Split not ideal in x-model directly without wrapper, but keeping simple for this request constraint. Ideally we use a textarea and getter/setter or just edit array items individually. -->
+                                    <div class="space-y-2">
+                                        <template x-for="(feat, idx) in plan.features">
+                                            <input type="text" x-model="plan.features[idx]" class="w-full border p-1 rounded text-sm">
+                                        </template>
+                                    </div>
+                                </div>
+                                <label class="flex items-center space-x-2">
+                                    <input type="checkbox" x-model="plan.recommended">
+                                    <span class="text-sm">Khuyên dùng (Nổi bật)</span>
+                                </label>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div x-show="activeTab === 'settings'" class="space-y-6">
+                    <h2 class="text-2xl font-bold mb-4">Cài đặt bảo mật</h2>
+                    <div class="bg-white p-6 rounded shadow-sm max-w-lg">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium mb-1">Mật khẩu Admin hiện tại</label>
+                            <input type="text" disabled :value="store.config.admin.password" class="w-full border p-2 rounded bg-gray-100 text-gray-500">
+                        </div>
+                        <div class="mb-4">
+                             <label class="block text-sm font-medium mb-1">Mật khẩu mới</label>
+                             <input type="text" x-ref="newPass" class="w-full border p-2 rounded" placeholder="Nhập mật khẩu mới">
+                        </div>
+                        <button @click="store.updatePassword($refs.newPass.value); $refs.newPass.value=''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Đổi mật khẩu</button>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+</body>
+</html>
