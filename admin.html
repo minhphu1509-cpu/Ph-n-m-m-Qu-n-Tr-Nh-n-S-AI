@@ -3,221 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - DMP AI</title>
+    <title>DMP AI Admin Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="v.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <style>
+        .ant-input { @apply w-full border border-gray-300 rounded-sm px-3 py-2 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition; }
+        .ant-label { @apply block text-sm font-medium text-gray-700 mb-1; }
+        .ant-tab { @apply px-6 py-4 text-gray-600 hover:text-blue-600 cursor-pointer border-b-2 border-transparent transition font-medium; }
+        .ant-tab.active { @apply text-blue-600 border-blue-600; }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen" x-data="{
-    auth: false,
-    password: '',
-    activeTab: 'general',
-    store: null,
-    init() {
-        this.store = Alpine.store('site');
-        // Auto login check if already authenticated in session (optional enhancement, sticking to basic gate for now)
-    },
-    login() {
-        if (this.password === this.store.config.admin.password) {
-            this.auth = true;
-        } else {
-            alert('Sai mật khẩu!');
-        }
-    }
-}">
+<body x-data="adminApp()" class="bg-gray-100 min-h-screen">
 
     <!-- Login Gate -->
-    <div x-show="!auth" class="flex items-center justify-center min-h-screen">
-        <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-            <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Đăng nhập Quản trị</h2>
+    <div x-show="!isLoggedIn" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-90">
+        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md transform transition-all">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-900">Đăng Nhập Quản Trị</h1>
+                <p class="text-gray-500 mt-2">DMP AI System Control</p>
+            </div>
             <form @submit.prevent="login">
-                <div class="mb-4">
-                    <label class="block text-gray-700 mb-2">Mật khẩu</label>
-                    <input type="password" x-model="password" class="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="mb-6">
+                    <label class="ant-label">Mật khẩu</label>
+                    <input type="password" x-model="passwordInput" class="ant-input" placeholder="Nhập mật khẩu quản trị...">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Đăng nhập</button>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2.5 rounded-sm hover:bg-blue-700 font-medium transition shadow-md">Đăng nhập</button>
+                <p x-show="loginError" class="mt-4 text-red-500 text-sm text-center">Mật khẩu không chính xác!</p>
             </form>
+            <div class="mt-6 text-center">
+                <a href="index.html" class="text-sm text-gray-600 hover:text-blue-600">Quay lại trang chủ</a>
+            </div>
         </div>
     </div>
 
-    <!-- Admin Panel -->
-    <div x-show="auth" class="flex flex-col h-screen">
-        <!-- Top Bar -->
-        <header class="bg-white shadow-sm z-10 flex justify-between items-center px-6 py-4">
-            <h1 class="text-xl font-bold text-gray-800">DMP AI CMS</h1>
-            <div class="flex gap-4">
-                <a href="index.html" target="_blank" class="text-blue-600 hover:underline">Xem Website</a>
-                <button @click="store.save()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 shadow-sm">Lưu Thay Đổi</button>
+    <!-- Admin Dashboard -->
+    <div x-show="isLoggedIn" x-cloak>
+        <!-- Header -->
+        <header class="bg-white shadow-sm sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16 items-center">
+                    <div class="flex items-center">
+                        <i class="fas fa-cogs text-blue-600 text-xl mr-3"></i>
+                        <h1 class="text-xl font-bold text-gray-900">DMP AI - CMS</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                         <button @click="saveConfig" class="bg-green-600 text-white px-4 py-2 rounded-sm hover:bg-green-700 text-sm font-medium flex items-center">
+                            <i class="fas fa-save mr-2"></i> Lưu Thay Đổi
+                        </button>
+                        <button @click="logout" class="text-gray-500 hover:text-red-600 text-sm font-medium">
+                            Đăng xuất
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
-        <div class="flex flex-1 overflow-hidden">
-            <!-- Sidebar -->
-            <aside class="w-64 bg-gray-800 text-gray-300 flex flex-col overflow-y-auto">
-                <nav class="p-4 space-y-2">
-                    <button @click="activeTab = 'general'" :class="activeTab === 'general' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Thông tin chung</button>
-                    <button @click="activeTab = 'hero'" :class="activeTab === 'hero' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Hero Section</button>
-                    <button @click="activeTab = 'features'" :class="activeTab === 'features' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Tính năng</button>
-                    <button @click="activeTab = 'pricing'" :class="activeTab === 'pricing' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Bảng giá</button>
-                    <button @click="activeTab = 'testimonials'" :class="activeTab === 'testimonials' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Khách hàng</button>
-                    <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'bg-gray-700 text-white' : 'hover:bg-gray-700'" class="w-full text-left px-4 py-2 rounded transition">Cài đặt Admin</button>
-                </nav>
-            </aside>
-
-            <!-- Content Area -->
-            <main class="flex-1 overflow-y-auto p-8">
-                
-                <!-- General Tab -->
-                <div x-show="activeTab === 'general'" class="space-y-6">
-                    <h2 class="text-2xl font-bold mb-4">Thông tin chung</h2>
-                    <div class="bg-white p-6 rounded shadow-sm space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tên Website</label>
-                            <input type="text" x-model="store.config.general.siteName" class="w-full border p-2 rounded">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Logo URL</label>
-                            <input type="text" x-model="store.config.general.logoUrl" class="w-full border p-2 rounded">
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Số điện thoại</label>
-                                <input type="text" x-model="store.config.general.contact.phone" class="w-full border p-2 rounded">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Email</label>
-                                <input type="text" x-model="store.config.general.contact.email" class="w-full border p-2 rounded">
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Địa chỉ</label>
-                            <input type="text" x-model="store.config.general.contact.address" class="w-full border p-2 rounded">
-                        </div>
-                        <h3 class="font-bold mt-4">Mạng xã hội</h3>
-                        <div class="grid grid-cols-2 gap-4">
-                            <input type="text" x-model="store.config.general.contact.facebook" placeholder="Facebook URL" class="w-full border p-2 rounded">
-                            <input type="text" x-model="store.config.general.contact.zalo" placeholder="Zalo URL" class="w-full border p-2 rounded">
-                            <input type="text" x-model="store.config.general.contact.tiktok" placeholder="TikTok URL" class="w-full border p-2 rounded">
-                            <input type="text" x-model="store.config.general.contact.youtube" placeholder="Youtube URL" class="w-full border p-2 rounded">
-                        </div>
-                    </div>
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-200 overflow-x-auto">
+                    <div @click="activeTab = 'general'" :class="{'active': activeTab === 'general'}" class="ant-tab">Chung</div>
+                    <div @click="activeTab = 'hero'" :class="{'active': activeTab === 'hero'}" class="ant-tab">Hero Section</div>
+                    <div @click="activeTab = 'features'" :class="{'active': activeTab === 'features'}" class="ant-tab">Tính Năng</div>
+                    <div @click="activeTab = 'about'" :class="{'active': activeTab === 'about'}" class="ant-tab">Giới Thiệu</div>
+                    <div @click="activeTab = 'pricing'" :class="{'active': activeTab === 'pricing'}" class="ant-tab">Bảng Giá</div>
+                    <div @click="activeTab = 'security'" :class="{'active': activeTab === 'security'}" class="ant-tab text-red-600 hover:text-red-800">Bảo Mật</div>
                 </div>
 
-                <!-- Hero Tab -->
-                <div x-show="activeTab === 'hero'" class="space-y-6">
-                    <h2 class="text-2xl font-bold mb-4">Hero Section</h2>
-                    <div class="bg-white p-6 rounded shadow-sm space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Tiêu đề chính</label>
-                            <input type="text" x-model="store.config.hero.headline" class="w-full border p-2 rounded">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Mô tả phụ</label>
-                            <textarea x-model="store.config.hero.subheadline" rows="3" class="w-full border p-2 rounded"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Nút CTA</label>
-                            <input type="text" x-model="store.config.hero.ctaText" class="w-full border p-2 rounded">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium mb-1">Ảnh Hero URL</label>
-                            <input type="text" x-model="store.config.hero.imageUrl" class="w-full border p-2 rounded">
-                        </div>
-                    </div>
+                <!-- Content -->
+                <div class="p-8">
                     
-                    <h3 class="text-xl font-bold mt-6 mb-2">Thống kê (Stats)</h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <template x-for="stat in store.config.stats">
-                            <div class="bg-white p-4 rounded shadow-sm">
-                                <input type="text" x-model="stat.number" class="w-full border p-2 rounded mb-2 font-bold">
-                                <input type="text" x-model="stat.label" class="w-full border p-2 rounded text-sm text-gray-600">
+                    <!-- General Tab -->
+                    <div x-show="activeTab === 'general'" class="space-y-6">
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="ant-label">Tên Thương Hiệu</label>
+                                <input x-model="config.general.brandName" type="text" class="ant-input">
                             </div>
-                        </template>
-                    </div>
-                </div>
-
-                <!-- Features Tab -->
-                <div x-show="activeTab === 'features'" class="space-y-6">
-                    <h2 class="text-2xl font-bold mb-4">Danh sách tính năng</h2>
-                    <template x-for="(feature, index) in store.config.features">
-                        <div class="bg-white p-6 rounded shadow-sm mb-4 border-l-4 border-blue-500">
-                            <div class="flex justify-between mb-2">
-                                <span class="font-bold" x-text="'Tính năng #' + (index + 1)"></span>
+                             <div>
+                                <label class="ant-label">Copyright Footer</label>
+                                <input x-model="config.general.copyright" type="text" class="ant-input">
                             </div>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-xs text-gray-500">Tên tính năng</label>
-                                    <input type="text" x-model="feature.title" class="w-full border p-2 rounded">
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500">Mô tả</label>
-                                    <textarea x-model="feature.desc" class="w-full border p-2 rounded"></textarea>
-                                </div>
-                                <div>
-                                    <label class="text-xs text-gray-500">SVG Path (Icon)</label>
-                                    <input type="text" x-model="feature.icon" class="w-full border p-2 rounded font-mono text-xs">
+                            <div>
+                                <label class="ant-label">Hotline</label>
+                                <input x-model="config.general.phone" type="text" class="ant-input">
+                            </div>
+                            <div>
+                                <label class="ant-label">Email</label>
+                                <input x-model="config.general.email" type="text" class="ant-input">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="ant-label">Địa chỉ</label>
+                                <input x-model="config.general.address" type="text" class="ant-input">
+                            </div>
+                             <div class="col-span-2">
+                                <label class="ant-label block font-bold mb-2 border-b pb-1">Mạng Xã Hội</label>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input x-model="config.general.social.facebook" placeholder="Facebook URL" type="text" class="ant-input">
+                                    <input x-model="config.general.social.youtube" placeholder="Youtube URL" type="text" class="ant-input">
+                                    <input x-model="config.general.social.tiktok" placeholder="TikTok URL" type="text" class="ant-input">
+                                    <input x-model="config.general.social.zalo" placeholder="Zalo Link" type="text" class="ant-input">
                                 </div>
                             </div>
                         </div>
-                    </template>
-                </div>
+                    </div>
 
-                <!-- Pricing Tab -->
-                <div x-show="activeTab === 'pricing'" class="space-y-6">
-                    <h2 class="text-2xl font-bold mb-4">Bảng giá dịch vụ</h2>
-                    <div class="grid lg:grid-cols-3 gap-6">
-                        <template x-for="plan in store.config.pricing">
-                            <div class="bg-white p-6 rounded shadow-sm">
-                                <div class="mb-4">
-                                    <label class="text-xs text-gray-500">Tên gói</label>
-                                    <input type="text" x-model="plan.name" class="w-full border p-2 rounded font-bold">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="text-xs text-gray-500">Giá</label>
-                                    <input type="text" x-model="plan.price" class="w-full border p-2 rounded">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="text-xs text-gray-500">Chu kỳ</label>
-                                    <input type="text" x-model="plan.period" class="w-full border p-2 rounded">
-                                </div>
-                                <div class="mb-4">
-                                    <label class="text-xs text-gray-500">Đặc điểm (cách nhau bởi phẩy)</label>
-                                    <!-- Simple array edit hack for MVP: Join/Split not ideal in x-model directly without wrapper, but keeping simple for this request constraint. Ideally we use a textarea and getter/setter or just edit array items individually. -->
-                                    <div class="space-y-2">
-                                        <template x-for="(feat, idx) in plan.features">
-                                            <input type="text" x-model="plan.features[idx]" class="w-full border p-1 rounded text-sm">
-                                        </template>
+                    <!-- Hero Tab -->
+                    <div x-show="activeTab === 'hero'" class="space-y-6">
+                        <div>
+                            <label class="ant-label">Tiêu đề chính (H1)</label>
+                            <input x-model="config.hero.title" type="text" class="ant-input">
+                        </div>
+                        <div>
+                            <label class="ant-label">Mô tả phụ</label>
+                            <textarea x-model="config.hero.subtitle" rows="3" class="ant-input"></textarea>
+                        </div>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div>
+                                <label class="ant-label">Text Nút CTA</label>
+                                <input x-model="config.hero.ctaText" type="text" class="ant-input">
+                            </div>
+                            <div>
+                                <label class="ant-label">Link Nút CTA</label>
+                                <input x-model="config.hero.ctaLink" type="text" class="ant-input">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="ant-label">Link Ảnh Hero</label>
+                            <input x-model="config.hero.image" type="text" class="ant-input">
+                            <img :src="config.hero.image" class="h-20 mt-2 rounded border">
+                        </div>
+                    </div>
+
+                    <!-- Features Tab -->
+                    <div x-show="activeTab === 'features'" class="space-y-8">
+                        <template x-for="(feature, index) in config.features">
+                            <div class="border p-4 rounded-md bg-gray-50 relative">
+                                <span class="absolute top-2 right-2 text-xs font-bold text-gray-400" x-text="'#' + (index + 1)"></span>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="ant-label">Icon Class (FontAwesome)</label>
+                                        <input x-model="feature.icon" type="text" class="ant-input">
+                                    </div>
+                                    <div>
+                                        <label class="ant-label">Tên Tính Năng</label>
+                                        <input x-model="feature.title" type="text" class="ant-input">
+                                    </div>
+                                    <div class="md:col-span-3">
+                                        <label class="ant-label">Mô tả ngắn</label>
+                                        <input x-model="feature.desc" type="text" class="ant-input">
                                     </div>
                                 </div>
-                                <label class="flex items-center space-x-2">
-                                    <input type="checkbox" x-model="plan.recommended">
-                                    <span class="text-sm">Khuyên dùng (Nổi bật)</span>
-                                </label>
+                            </div>
+                        </template>
+                        <div class="text-sm text-gray-500 italic">*Sửa trực tiếp các mục trên. Icon sử dụng class từ FontAwesome 6.</div>
+                    </div>
+
+                    <!-- About Tab -->
+                     <div x-show="activeTab === 'about'" class="space-y-6">
+                        <div>
+                            <label class="ant-label">Tiêu đề</label>
+                            <input x-model="config.about.title" type="text" class="ant-input">
+                        </div>
+                        <div>
+                            <label class="ant-label">Nội dung giới thiệu</label>
+                            <textarea x-model="config.about.content" rows="6" class="ant-input"></textarea>
+                        </div>
+                        <div>
+                            <label class="ant-label">Hình ảnh</label>
+                            <input x-model="config.about.image" type="text" class="ant-input">
+                            <img :src="config.about.image" class="h-20 mt-2 rounded border">
+                        </div>
+                    </div>
+
+                    <!-- Pricing Tab -->
+                    <div x-show="activeTab === 'pricing'" class="space-y-8">
+                        <template x-for="(plan, index) in config.pricing">
+                            <div class="border p-4 rounded-md bg-gray-50">
+                                <div class="grid grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label class="ant-label">Tên Gói</label>
+                                        <input x-model="plan.name" type="text" class="ant-input font-bold">
+                                    </div>
+                                    <div>
+                                        <label class="ant-label">Giá</label>
+                                        <input x-model="plan.price" type="text" class="ant-input text-blue-600 font-bold">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="ant-label">Các tính năng (Phân cách bằng dấu phẩy)</label>
+                                    <!-- Custom logic to split/join array for textarea editing -->
+                                    <textarea 
+                                        x-bind:value="plan.features.join(', ')" 
+                                        @input="plan.features = $event.target.value.split(',').map(s => s.trim())" 
+                                        rows="3" class="ant-input"></textarea>
+                                </div>
                             </div>
                         </template>
                     </div>
-                </div>
 
-                <!-- Settings Tab -->
-                <div x-show="activeTab === 'settings'" class="space-y-6">
-                    <h2 class="text-2xl font-bold mb-4">Cài đặt bảo mật</h2>
-                    <div class="bg-white p-6 rounded shadow-sm max-w-lg">
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium mb-1">Mật khẩu Admin hiện tại</label>
-                            <input type="text" disabled :value="store.config.admin.password" class="w-full border p-2 rounded bg-gray-100 text-gray-500">
+                    <!-- Security Tab -->
+                    <div x-show="activeTab === 'security'" class="space-y-6 max-w-lg">
+                        <div class="bg-red-50 border border-red-200 p-6 rounded-md">
+                            <h3 class="text-red-800 font-bold mb-4">Đổi Mật Khẩu Quản Trị</h3>
+                            <div>
+                                <label class="ant-label">Mật khẩu mới</label>
+                                <input type="text" x-model="config.admin.password" class="ant-input">
+                                <p class="text-xs text-gray-500 mt-2">Lưu ý: Hãy ghi nhớ mật khẩu mới trước khi Lưu.</p>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                             <label class="block text-sm font-medium mb-1">Mật khẩu mới</label>
-                             <input type="text" x-ref="newPass" class="w-full border p-2 rounded" placeholder="Nhập mật khẩu mới">
-                        </div>
-                        <button @click="store.updatePassword($refs.newPass.value); $refs.newPass.value=''" class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700">Đổi mật khẩu</button>
                     </div>
-                </div>
 
-            </main>
-        </div>
+                </div>
+            </div>
+        </main>
     </div>
+
+    <script>
+        function adminApp() {
+            return {
+                isLoggedIn: false,
+                passwordInput: '',
+                loginError: false,
+                config: {},
+                activeTab: 'general',
+                
+                init() {
+                    // Load config like main app
+                    const stored = localStorage.getItem('siteConfig');
+                    if (stored) {
+                        this.config = JSON.parse(stored);
+                    } else {
+                        this.config = DEFAULT_CONFIG;
+                        localStorage.setItem('siteConfig', JSON.stringify(DEFAULT_CONFIG));
+                    }
+                    
+                    // Check session
+                    if (sessionStorage.getItem('dmp_admin_session') === 'true') {
+                        this.isLoggedIn = true;
+                    }
+                },
+
+                login() {
+                    if (this.passwordInput === this.config.admin.password) {
+                        this.isLoggedIn = true;
+                        this.loginError = false;
+                        sessionStorage.setItem('dmp_admin_session', 'true');
+                    } else {
+                        this.loginError = true;
+                    }
+                },
+
+                logout() {
+                    this.isLoggedIn = false;
+                    this.passwordInput = '';
+                    sessionStorage.removeItem('dmp_admin_session');
+                },
+
+                saveConfig() {
+                    localStorage.setItem('siteConfig', JSON.stringify(this.config));
+                    alert('Đã cập nhật nội dung website!');
+                }
+            }
+        }
+    </script>
 </body>
 </html>
